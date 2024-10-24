@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jstat/1.9.4/jstat.min.js"></script>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Selection Tool for Suspected Stroke Patients in Taipei City</title>
+    <link rel="stylesheet" href="css/index.css">
+    <style>
+        .loading {
+            display: none;
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem;
+            color: #007bff;
+        }
+        .error-message {
+            color: red;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="#home">ED Lab</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main>
+        <section class="hero">
+            <h1>台北市對疑似腦中風患者選擇醫院</h1>
+            <p>考慮最小化超出治療時間窗風險的風險規避策略</p>
+            <button>了解更多</button>
+        </section>
+
+        <section class="contact-container">
+            <div class="cpss-info">
+                <h2>患者的 G-FAST 評分是多少？如何評估？</h2>
+                <p>Gaze-Face-Arm-Speech-Time(G-FAST) 量表是一種用於院前診斷潛在腦中風的系統。它測試四個關鍵的異常症狀：凝視偏斜、面部下垂、手臂無力和語言障礙。G-FAST 評分是這些異常測試的累計分數。</p>
+                <ol>
+                    <li>
+                        <strong>凝視偏斜：</strong>請患者用眼睛跟隨你的手指左右移動。
+                        <ul>
+                            <li><strong class="normal-text">正常：</strong>雙眼對稱移動。</li>
+                            <li><strong class="abnormal-text">異常：</strong>一隻或兩隻眼睛無法對稱移動或偏斜到一側。</li>
+                        </ul>
+                        <select id="gaze-score" name="gaze-score" required>
+                            <option value="">請選擇 ⋯</option>
+                            <option value="0">正常</option>
+                            <option value="1">異常</option>
+                        </select>
+                        <div class="error-message" id="gaze-score-error"></div>
+                    </li>
+                    <li>
+                        <strong>面部下垂：</strong>請患者微笑或露出牙齒。
+                        <ul>
+                            <li><strong class="normal-text">正常：</strong>兩側面部運動對稱。</li>
+                            <li><strong class="abnormal-text">異常：</strong>一側面部運動不如另一側或下垂。</li>
+                        </ul>
+                        <select id="facial-score" name="facial-score" required>
+                            <option value="">請選擇 ⋯</option>
+                            <option value="0">正常</option>
+                            <option value="1">異常</option>
+                        </select>
+                        <div class="error-message" id="facial-score-error"></div>
+                    </li>
+                    <li>
+                        <strong>手臂支撐：</strong>請患者閉上眼睛，雙手向前伸直，手掌朝上，保持約10秒。
+                        <ul>
+                            <li><strong class="normal-text">正常：</strong>兩隻手臂運動對稱或完全不動。</li>
+                            <li><strong class="abnormal-text">異常：</strong>一隻手臂不動或相對於另一隻手臂向下漂移。</li>
+                        </ul>
+                        <select id="arm-score" name="arm-score" required>
+                            <option value="">請選擇 ⋯</option>
+                            <option value="0">正常</option>
+                            <option value="1">異常</option>
+                        </select>
+                        <div class="error-message" id="arm-score-error"></div>
+                    </li>
+                    <li>
+                        <strong>語言咬字：</strong>請患者說 "晴時多雲偶陣雨" 或另一個簡單熟悉的句子。
+                        <ul>
+                            <li><strong class="normal-text">正常：</strong>正確複誦且無口齒不清。</li>
+                            <li><strong class="abnormal-text">異常：</strong>口齒不清或無法說話。</li>
+                        </ul>
+                        <select id="speech-score" name="speech-score" required>
+                            <option value="">請選擇 ⋯</option>
+                            <option value="0">正常</option>
+                            <option value="1">異常</option>
+                        </select>
+                        <div class="error-message" id="speech-score-error"></div>
+                    </li>
+                </ol>
+                <label for="total-score">G-FAST 評分: <span id="total-score">0</span></label>
+            </div>
+    
+            <section class="contact">
+                <form id="stroke-form">
+                    <h2>患者的症狀何時開始？</h2>
+                    <input type="datetime-local" id="onset-time" name="onset-time" required>
+                    <div class="error-message" id="onset-time-error"></div>
+    
+                    <h2>患者當前所在位置在哪裡？</h2>
+                    <div class="location-input-container">
+                        <input type="text" id="location" name="location" placeholder="請輸入位置" required>
+                        <button type="button" id="locate-btn">
+                            <img src="image/location.png" alt="定位我">
+                        </button>
+                    </div>
+                    <div class="error-message" id="location-error"></div>
+    
+                    <div class="submit">                       
+                        <input type="submit" value="送出">
+                    </div>
+                    <div id="map" style="height: 0px;"></div>
+                    <div id="critical-message-container"></div>
+                </form>
+            </section>
+        </section>
+    
+        <!-- 分隔線 -->
+        <div class="separator"></div>
+    
+        <!-- 推薦醫院部分 -->
+        <section id="topHospitalsContainer">
+            <h2>推薦醫院</h2>
+            <p>在按下 "送出" 按鈕後，建議的醫院將在幾秒鐘內顯示。醫院主要按接受確定治療的概率進行排名，概率較高者更為有利。如果概率相同，醫院按從症狀開始到治療的平均時間排序，較短的時間優先。通常由延遲決定去醫院而導致的負概率仍然可以考慮。</p>
+    
+            <div id="topHospitals"></div>
+        </section>
+    </main>
+    
+    <footer>
+        <div class="social-links"></div>
+    </footer>
+    
+    <div class="loading" id="loading">加載中...</div>
+    
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCtHUZ8pvBsTEDL35E23a9slI-kpRwS8c8&libraries=places&callback=initMap&loading=async"></script>
+    <script src="js/index.js" defer></script>
+    <canvas id="chartId" width="400" height="200"></canvas>
+
